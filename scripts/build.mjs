@@ -53,6 +53,7 @@ async function cape() {
   }
 }
 
+process.on("unhandledRejection", (e) => { console.error("FEL:", e?.message || e); process.exit(1); });
 const [LR, TB, SP, CPI, BAA10Y, DGS10, DTB3, SPX, capeR] = await Promise.all([
   fred('GS10'), fred('TB3MS'), fred('BAA10YM'), fred('CPIAUCNS'),
   fred('BAA10Y', true), fred('DGS10', true), fred('DTB3', true), fred('SP500', true), cape(),
