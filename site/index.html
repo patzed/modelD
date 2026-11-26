@@ -72,6 +72,9 @@
   <h2>I dag: prognos för nästa månad</h2>
   <div class="card" id="today"><span class="small">Visas när dagsdata finns.</span></div>
 
+  <h2>Resultat sedan start</h2>
+  <div class="card" id="results"><span class="small">Laddar …</span></div>
+
   <h2>Aktier: exitbeslut mot ATH</h2>
   <div class="card" id="eq"><span class="small">Hämtar indexnivåer …</span></div>
 
@@ -161,6 +164,25 @@ function render(d, live) {
   $('hist').innerHTML = (d.history||[]).slice().reverse().map(h => `<div><span class="m">${h.month}</span><span>${Object.entries(h.w).map(([a,w])=>`${SHORT[a]} ${Math.round(w*h.lev*100)}%`).join(' · ')}${h.lev>1?' (1,5×)':''}</span></div>`).join('') || '<span class="small">Visas när live-data finns.</span>';
 }
 
+function renderResults(d) {
+  const R = (d.results || []), done = R.filter(x => !x.pending), pend = R.find(x => x.pending);
+  const start = d.resultsStart || '2026-11';
+  const cls = (v) => v >= 0 ? 'posv' : 'neg';
+  if (!done.length) {
+    $('results').innerHTML = `<p>Uppföljningen startar med beslutet för ${mname(start)}. Första månadens resultat räknas fram när månaden är slut och FRED har publicerat månadsdata, normalt första vardagarna i nästa månad.</p>
+      ${pend ? `<p class="small">Väntar på data: ${pend.pending.map(a=>SHORT[a]).join(', ')}.</p>` : ''}
+      <p class="small">Här visas bara verkliga utfall efter att modellen byggdes, med besluten låsta i förväg (data/decisions.json i repot). Allt före ${mname(start)} är backtest.</p>`;
+    return;
+  }
+  const last = done[done.length - 1];
+  const rows = done.map(x => `<tr><td>${x.month}<div class="why">${Object.entries(x.w).map(([a,w])=>`${SHORT[a]} ${Math.round(w*x.lev*100)} %`).join(' · ')}</div></td>
+    <td class="n"><b class="${cls(x.D)}">${spct(x.D)}</b></td><td class="n">${spct(x.SPX)}</td><td class="n">${spct(x['60/40'])}</td></tr>`).join('');
+  $('results').innerHTML = `<p>Ackumulerat ${mname(done[0].month)}–${mname(last.month)}: <b>Modell D <span class="${cls(last.cum_D)}">${spct(last.cum_D)}</span></b> · S&amp;P 500 ${spct(last.cum_SPX)} · 60/40 ${spct(last['cum_60/40'])}</p>
+    <table><thead><tr><th>Månad</th><th class="n">D</th><th class="n">S&amp;P 500</th><th class="n">60/40</th></tr></thead><tbody>${rows}</tbody></table>
+    ${pend ? `<p class="small">${mname(pend.month)} väntar på data: ${pend.pending.map(a=>SHORT[a]).join(', ')}.</p>` : ''}
+    <p class="small">Verkliga utfall med låsta beslut, efter 0,1 % kostnad per byte och lånekostnad vid hävstång. Stat och kredit räknas från FRED:s räntor (som i backtesten), guld från Världsbankens månadsmedel, S&amp;P 500 som pris utan utdelning. Novembers beslut togs den 24 november men räknas för hela månaden.</p>`;
+}
+
 async function renderEq(d) {
   const { s: spx, live } = await spxP;
   let bt = null; try { bt = await btP; } catch {}
@@ -244,6 +266,7 @@ try {
   render(d, true); D = d;
 } catch (e) { D = { ...FALLBACK, error: e.message }; render(D, false); }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+renderResults(D);
 renderEq(D).catch(e => { $('eq').innerHTML = `<span class="err">Exitkortet kunde inte visas (${e.message}).</span>`; });
 </script>
 </body>

@@ -1,0 +1,12 @@
+{
+  "2026-11": {
+    "w": {
+      "CREDIT": 0.5,
+      "BOND": 0.5
+    },
+    "lev": 1.5,
+    "phase": "Spricka",
+    "decidedOn": "2026-11-24",
+    "dataMonth": "2026-10"
+  }
+}
