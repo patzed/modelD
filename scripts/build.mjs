@@ -121,5 +121,7 @@ fs.writeFileSync(path.join(OUT, 'spx.json'), JSON.stringify(spx, null, 2));
 const logF = path.join(ROOT, 'data', 'log.csv');
 if (!fs.existsSync(logF)) fs.writeFileSync(logF, 'datum,datamånad,beslut_för,beslut,hävstång,prognos_för,prognos,prognos_hävstång,baa10y,sp500\n');
 const fmt = (w) => Object.entries(w).map(([a, v]) => `${a} ${Math.round(v * 100)}%`).join(' + ');
+const today = signal.generated.slice(0, 10);
+fs.writeFileSync(logF, fs.readFileSync(logF, 'utf8').split('\n').filter((l) => l && !l.startsWith(today)).join('\n') + '\n'); // en rad per dag
 fs.appendFileSync(logF, [signal.generated.slice(0, 10), k, now.month, fmt(now.w), now.lev, nowcast?.decisionFor ?? '', nowcast ? fmt(nowcast.signal.w) : '', nowcast?.signal.lev ?? '', nowcast?.today.spread ?? '', SPX[lastD]].join(',') + '\n');
 console.log(`Data ${k} | beslut ${now.month}: ${fmt(now.w)} ×${now.lev} | prognos ${nowcast?.decisionFor}: ${nowcast ? fmt(nowcast.signal.w) + ' ×' + nowcast.signal.lev : '-'} | S&P ${SPX[lastD]} (${lastD}) | CAPE ${capeSource}`);
