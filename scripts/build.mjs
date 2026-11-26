@@ -74,7 +74,10 @@ const c = add(k, 1), inC = (o) => Object.keys(o).filter((d) => d.startsWith(c)).
 const avg = (o) => { const ks = inC(o); return ks.length ? ks.reduce((a, d) => a + o[d], 0) / ks.length : null; };
 let nowcast = null;
 const sp = avg(BAA10Y), lr = avg(DGS10), tb = avg(DTB3);
-if (sp != null && lr != null && tb != null && c in CAPE) {
+// CAPE för innevarande månad: multpl:s löpande värde, annars senast kända (framfört)
+let capeNote = '';
+if (!(c in CAPE)) { const lastK = Object.keys(CAPE).sort().pop(); CAPE[c] = CAPE[lastK]; capeNote = ` (CAPE för ${c} saknas; ${lastK} används)`; }
+if (sp != null && lr != null && tb != null) {
   const S2 = { CPI, CAPE, LR: { ...LR, [c]: lr }, TB: { ...TB, [c]: tb }, SP: { ...SP, [c]: sp } };
   const pre = buildModel(S2).signal(add(c, 1)); const lastDay = inC(BAA10Y).pop();
   nowcast = { month: c, decisionFor: pre.month, tradingDays: inC(BAA10Y).length, lastDay,
@@ -83,7 +86,7 @@ if (sp != null && lr != null && tb != null && c in CAPE) {
 }
 const signal = { generated: new Date().toISOString(), decisionFor: now.month, dataMonth: k, names: NAMES, assets: ASSETS, now, history, nowcast,
   notes: ['Beslutet gäller hela nästa månad. Byt innehav första handelsdagen.', 'Hävstång 1,5× innebär lån till ungefär kortränta + 1 procentenhet.',
-    `Dagsdata från FRED (BAA10Y, DGS10, DTB3); ${nowcast?.tradingDays ?? 0} handelsdagar i månaden hittills. CAPE: ${capeSource}.`,
+    `Dagsdata från FRED (BAA10Y, DGS10, DTB3); ${nowcast?.tradingDays ?? 0} handelsdagar i månaden hittills. CAPE: ${capeSource}${capeNote}.`,
     cpiLatest < k ? `KPI för ${k} är inte publicerad än; ${cpiLatest} används.` : 'KPI är uppdaterad.'] };
 
 // exitkort: S&P 500 mot ATH och D:s in/ut-byten i aktier (FRED har 10 års dagsdata)
