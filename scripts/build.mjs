@@ -133,7 +133,8 @@ for (const m of Object.keys(decisions).sort()) {
 fs.writeFileSync(path.join(ROOT, 'data', 'results.csv'), 'månad,innehav,hävstång,D,S&P 500 (pris),60/40,D ackumulerat,S&P ackumulerat,60/40 ackumulerat\n' +
   results.filter((x) => !x.pending).map((x) => [x.month, Object.entries(x.w).map(([a, w]) => `${a} ${Math.round(w * 100)}%`).join(' + '), x.lev, x.D, x.SPX, x['60/40'], x.cum_D, x.cum_SPX, x['cum_60/40']].map((v) => typeof v === 'number' ? +v.toFixed(5) : v).join(',')).join('\n') + '\n');
 
-const signal = { results, resultsStart: START, generated: new Date().toISOString(), decisionFor: now.month, dataMonth: k, names: NAMES, assets: ASSETS, now, history, nowcast,
+const goldInfo = Object.keys(GOLD).length ? `Guld (Världsbanken): ${Object.keys(GOLD).length} månader, senast ${Object.keys(GOLD).sort().pop()}.` : 'Guld: prisserien kunde inte hämtas.';
+const signal = { goldInfo, results, resultsStart: START, generated: new Date().toISOString(), decisionFor: now.month, dataMonth: k, names: NAMES, assets: ASSETS, now, history, nowcast,
   notes: ['Beslutet gäller hela nästa månad. Byt innehav första handelsdagen.', 'Hävstång 1,5× innebär lån till ungefär kortränta + 1 procentenhet.',
     `Dagsdata från FRED (BAA10Y, DGS10, DTB3); ${nowcast?.tradingDays ?? 0} handelsdagar i månaden hittills. CAPE: ${capeSource}${capeNote}.`,
     cpiLatest < k ? `KPI för ${k} är inte publicerad än; ${cpiLatest} används.` : 'KPI är uppdaterad.'] };
