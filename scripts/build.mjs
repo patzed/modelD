@@ -63,6 +63,10 @@ const { CAPE, capeSource } = capeR;
 // datamånad k = senaste månad där alla månadsserier finns
 const k = Object.keys(LR).filter((m) => m in TB && m in SP && m in CAPE).sort().pop();
 const cpiLatest = Object.keys(CPI).sort().pop();
+// KPI-luckor mitt i serien (t.ex. okt 2025, som BLS aldrig publicerade) interpoleras geometriskt mellan grannmånaderna
+{ const ks = Object.keys(CPI).sort();
+  for (let i = 1; i < ks.length; i++) { const a = ks[i - 1], b = ks[i], gap = months(a, b).slice(1, -1);
+    gap.forEach((m, j) => { CPI[m] = CPI[a] * Math.pow(CPI[b] / CPI[a], (j + 1) / (gap.length + 1)); }); } }
 for (const s of [CPI, TB]) { let lv = null; for (const m of months('1930-01', add(k, 2))) { if (m in s) lv = s[m]; else if (lv != null) s[m] = lv; } }
 
 const M = buildModel({ CAPE, LR, TB, SP, CPI });
