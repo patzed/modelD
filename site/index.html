@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modell D – månadens allokering</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#24527a">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root { --bg:#f6f5f1; --card:#fff; --ink:#1d1d1b; --mut:#6b6a66; --line:#e3e1db; --ok:#1f7a4d; --no:#b3261e; --acc:#24527a; --warn:#8a5a00; --neg:#a8461b; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#151514; --card:#1f1f1d; --ink:#ecebe6; --mut:#a3a29c; --line:#34332f; --ok:#5cc28d; --no:#ff8a80; --acc:#8ab8e0; --warn:#e0b45c; --neg:#f0a070; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:20px 16px 60px; }
+  h1 { font-size:1.5rem; margin:0 0 4px; } h2 { font-size:1.05rem; margin:28px 0 10px; text-transform:uppercase; letter-spacing:.04em; color:var(--mut); }
+  .sub { color:var(--mut); font-size:.9rem; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin:10px 0; }
+  .alloc { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+  .pos { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  .pos .pct { font-size:2rem; font-weight:700; font-variant-numeric:tabular-nums; }
+  .pos .nm { color:var(--mut); font-size:.9rem; }
+  .lev { margin-top:10px; padding:10px 12px; border-radius:10px; background:color-mix(in srgb,var(--warn) 12%,transparent); color:var(--warn); font-size:.92rem; }
+  table { width:100%; border-collapse:collapse; font-size:.92rem; font-variant-numeric:tabular-nums; }
+  th,td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--mut); font-weight:600; font-size:.8rem; }
+  td.n { text-align:right; white-space:nowrap; }
+  .tag { display:inline-block; padding:1px 8px; border-radius:99px; font-size:.78rem; font-weight:600; }
+  .tag.ok { background:color-mix(in srgb,var(--ok) 15%,transparent); color:var(--ok); }
+  .tag.no { background:color-mix(in srgb,var(--no) 15%,transparent); color:var(--no); }
+  .why { color:var(--mut); font-size:.8rem; margin-top:2px; }
+  .flags li { margin:4px 0; } .flags .on { color:var(--no); font-weight:600; } .flags .off { color:var(--mut); }
+  .hist { display:flex; flex-direction:column; gap:4px; font-size:.85rem; }
+  .hist div { display:flex; gap:10px; } .hist .m { width:70px; color:var(--mut); font-variant-numeric:tabular-nums; }
+  svg { width:100%; height:auto; display:block; }
+  .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:.85rem; color:var(--mut); margin-top:6px; }
+  .legend i { display:inline-block; width:14px; height:3px; vertical-align:middle; margin-right:5px; border-radius:2px; }
+  .err { color:var(--no); }
+  details summary { cursor:pointer; font-weight:600; }
+  .small { font-size:.85rem; color:var(--mut); }
+  /* Aktieexit mot ATH */
+  .eqhead { display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .eqhead .t { font-size:1.15rem; font-weight:700; }
+  .eqstate { font-size:1.1rem; font-weight:700; margin:4px 0 2px; }
+  .eqstate.out { color:var(--no); } .eqstate.in { color:var(--ok); }
+  .eqbox { border:1px solid var(--line); border-radius:12px; padding:14px; margin-top:12px; background:color-mix(in srgb,var(--line) 25%,transparent); }
+  .eqrow { margin-top:14px; font-variant-numeric:tabular-nums; }
+  .eqrow .eqt { font-weight:700; }
+  .eqrow .lvl { font-size:1.05rem; }
+  .neg { color:var(--neg); font-weight:700; } .posv { color:var(--ok); font-weight:700; }
+  .bar { position:relative; height:12px; border-radius:99px; background:var(--line); margin:8px 0 2px; }
+  .bar b { position:absolute; left:0; top:0; bottom:0; border-radius:99px; background:var(--acc); }
+  .bar i { position:absolute; top:-5px; bottom:-5px; width:2px; background:var(--warn); }
+  .bar::after { content:''; position:absolute; right:0; top:-5px; bottom:-5px; width:2px; background:var(--ink); }
+  .bar .seg { position:absolute; top:0; bottom:0; border-radius:99px; }
+  .bar .seg.loss { background:var(--no); } .bar .seg.gain { background:var(--ok); }
+  .lossv { color:var(--no); font-weight:700; }
+  .since { margin-top:14px; padding-top:12px; border-top:1px solid var(--line); font-size:.92rem; }
+  .since li { margin:3px 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Modell D</h1>
+  <div class="sub" id="status">Hämtar färsk data …</div>
+
+  <h2>Allokering</h2>
+  <div class="alloc" id="alloc"></div>
+  <div id="levbox"></div>
+
+  <h2>I dag: prognos för nästa månad</h2>
+  <div class="card" id="today"><span class="small">Visas när dagsdata finns.</span></div>
+
+  <h2>Aktier: exitbeslut mot ATH</h2>
+  <div class="card" id="eq"><span class="small">Hämtar indexnivåer …</span></div>
+
+  <h2>Rangordning</h2>
+  <div class="card"><table id="rank"><thead><tr><th>Tillgång</th><th class="n">Förväntad real avk.</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+
+  <h2>Fas och obalanser</h2>
+  <div class="card" id="phase"></div>
+
+  <h2>Senaste 24 månaderna</h2>
+  <div class="card hist" id="hist"></div>
+
+  <h2>Historik 1973–2026</h2>
+  <div class="card">
+    <svg id="chart" viewBox="0 0 700 300" role="img" aria-label="Värdeutveckling, logaritmisk skala"></svg>
+    <div class="legend"><span><i style="background:var(--acc)"></i>Modell D</span><span><i style="background:#c0712b"></i>S&amp;P 500</span><span><i style="background:var(--mut)"></i>60/40</span></div>
+    <p class="small">Logaritmisk skala. Backtest i efterhand, före skatt, med 0,1 % i kostnad per byte.</p>
+  </div>
+  <div class="card"><table id="stats"></table></div>
+
+  <h2>Om modellen</h2>
+  <div class="card small">
+    <p>Varje månad räknas en förväntad real avkastning fram för fem tillgångar. Den bygger på värdering och ränteläge, inte på pristrender:</p>
+    <ul>
+      <li>Aktier: 1/CAPE</li>
+      <li>Statsobligationer: 10-årsränta minus inflation</li>
+      <li>Kredit: Baa-ränta minus 0,5 % i förväntade kreditförluster och minus inflation</li>
+      <li>Kassa: T-bill minus inflation</li>
+      <li>Guld: 0</li>
+    </ul>
+    <p>En tillgång väljs bort när en obalans och en chock finns samtidigt. Pengarna delas lika mellan de två bästa tillgångarna som är kvar. Är ingen av dem kassa används 1,5 gånger hävstång.</p>
+    <p><b>Viktigt:</b> Detta är en modell testad i efterhand, inte en investeringsrådgivning. Stats- och kreditavkastningen är beräknad från räntenivåer, inte från verkliga fonder. I praktiken handlar man D via fonder eller ETF:er, till exempel för långa statsobligationer och för företagsobligationer med god kreditvärdighet. Utfallet blir därför annorlunda.</p>
+    <p>Sidan räknas om automatiskt varje kväll av GitHub Actions, när FRED har lagt ut dagens räntor. Varje dags beslut sparas i data/log.csv i repot.</p>
+    <p>Data: FRED (GS10, TB3MS, BAA10YM, CPIAUCNS, SP500; Moody's Baa © Moody's) och multpl.com (Shiller CAPE). Indexnivåerna i exitkortet är officiella stängningskurser för S&amp;P 500 från FRED; ATH avser högsta stängning.</p>
+  </div>
+</main>
+<script type="module">
+const NAMES = { EQ:'Aktier (S&P 500)', BOND:'Statsobligationer 10 år', CREDIT:'Företagsobligationer (Baa)', GOLD:'Guld', CASH:'Kassa (T-bill)' };
+const SHORT = { EQ:'Aktier', BOND:'Stat', CREDIT:'Kredit', GOLD:'Guld', CASH:'Kassa' };
+const MONTHS = ['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
+const mname = (m) => `${MONTHS[+m.slice(5)-1]} ${m.slice(0,4)}`;
+const pct = (x, d=0) => (x*100).toLocaleString('sv-SE',{minimumFractionDigits:d,maximumFractionDigits:d}) + ' %';
+const spct = (x, d=1) => (x>0?'+':'') + pct(x, d);
+const num = (x, d=1) => x.toLocaleString('sv-SE',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fd = (s) => new Date(s+'T12:00:00').toLocaleDateString('sv-SE',{day:'numeric',month:'short',year:'numeric'});
+const prevMonth = (m) => { let y=+m.slice(0,4), mo=+m.slice(5)-1; if(!mo){y--;mo=12;} return `${y}-${String(mo).padStart(2,'0')}`; };
+const $ = (id) => document.getElementById(id);
+
+// Senast kända signal (beräknad 2026-11-24), visas om live-hämtningen misslyckas
+const FALLBACK = { decisionFor:'2026-11', dataMonth:'2026-10', now:{ w:{CREDIT:.5,BOND:.5}, lev:1.5, phase:'Spricka', rank:['CREDIT','BOND','CASH','GOLD'],
+  er:{EQ:2.46,BOND:1.39,CREDIT:2.35,GOLD:0,CASH:0.31}, flag:{EQ:true,BOND:false,CREDIT:false,GOLD:false,CASH:false}, why:{}, stack:{}, healAt:1.4 }, history:[], notes:[] };
+// Senast kända indexnivåer (FRED SP500), visas om spx.json inte kan läsas
+const SPX_FALLBACK = { ath:{date:'2026-10-06',level:7818.93}, last:{date:'2026-11-23',level:7237.17},
+  events:[{type:'exit',month:'2025-05',date:'2025-04-30',level:5569.06,athThen:{date:'2025-02-19',level:6144.15},note:'Beräknat i efterhand: Modell D byggdes 24 nov. 2026, så inga faktiska affärer ligger bakom.'}] };
+
+const btP = fetch('lib/backtest.json').then(r=>r.json());
+const spxP = fetch('spx.json',{cache:'no-store'}).then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); }).then(s=>({s,live:true})).catch(()=>({s:SPX_FALLBACK,live:false}));
+
+function render(d, live) {
+  const n = d.now;
+  $('status').innerHTML = live
+    ? `Beslut för <b>${mname(d.decisionFor)}</b>, baserat på data till och med ${mname(d.dataMonth)}. Uppdaterad ${new Date(d.generated).toLocaleString('sv-SE',{dateStyle:'short',timeStyle:'short'})}.`
+    : `<span class="err">Data kunde inte läsas (${d.error||'okänt fel'}). Visar senast kända signal för ${mname(d.decisionFor)}.</span>`;
+  $('alloc').innerHTML = Object.entries(n.w).map(([a,w]) => `<div class="pos"><div class="pct">${pct(w*n.lev)}</div><div class="nm">${NAMES[a]}</div></div>`).join('');
+  $('levbox').innerHTML = n.lev > 1
+    ? `<div class="lev">Hävstång 1,5×. Av eget kapital ligger ${pct(n.w[Object.keys(n.w)[0]])} i vardera tillgången, plus lån på 50 % av kapitalet. Utan hävstång (variant B) blir det 50/50.</div>`
+    : `<div class="lev">Ingen hävstång den här månaden, eftersom kassa är ett av de två valen.</div>`;
+  const nc = d.nowcast;
+  if (nc && !nc.error) {
+    const p = nc.signal, ch = nc.changes;
+    $('today').innerHTML = `<p>Om ${mname(nc.month)} slutar som månaden hittills ser (${nc.tradingDays} handelsdagar till och med ${nc.lastDay}) blir beslutet för <b>${mname(nc.decisionFor)}</b>:</p>
+      <p style="font-size:1.15rem"><b>${Object.entries(p.w).map(([a,w])=>`${SHORT[a]} ${Math.round(w*p.lev*100)} %`).join(' · ')}</b>${p.lev>1?' (1,5×)':''} ${ch?'<span class="tag no">Byte väntas</span>':'<span class="tag ok">Oförändrat</span>'}</p>
+      <ul class="flags">
+        <li>Baa−10y i dag <b>${num(nc.today.spread,2)}</b>, månadssnitt ${num(nc.monthAvg.spread,2)}${n.healAt!=null?`. Aktiernas spricka läker vid ${num(n.healAt,2)} eller lägre (månadssnitt).`:''} Ny spricka vid ${num(n.crackAt,2)}.</li>
+        <li>10-årsränta i dag ${num(nc.today.GS10,2)} %, månadssnitt ${num(nc.monthAvg.GS10,2)} %. T-bill månadssnitt ${num(nc.monthAvg.TB3,2)} %.</li>
+        <li>CAPE ${num(nc.today.CAPE,1)}. Stegfas med månaden hittills: ${p.phase}.</li>
+      </ul>
+      <p class="small">Prognosen ändras dag för dag. Beslutet låses vid månadsskiftet, när månadssnitten är kompletta. Modellen är testad på månadsbeslut, inte på byten mitt i en månad.</p>`;
+  } else if (nc && nc.error) $('today').innerHTML = `<span class="small">Dagsdata kunde inte hämtas: ${nc.error}</span>`;
+  const rows = Object.keys(NAMES).sort((a,b) => (n.flag[a]-n.flag[b]) || (n.er[b]-n.er[a]));
+  $('rank').querySelector('tbody').innerHTML = rows.map(a => `<tr><td>${NAMES[a]}${n.why?.[a]?`<div class="why">${n.why[a]}</div>`:''}</td>
+    <td class="n">${num(n.er[a])} %</td><td>${n.flag[a]?'<span class="tag no">Bortvald</span>':(a in n.w?'<span class="tag ok">Vald</span>':'<span class="tag ok">Ok</span>')}</td></tr>`).join('');
+  const st = n.stack || {}; const on = Object.values(st).filter(p=>p.on).length;
+  $('phase').innerHTML = `<p>Stegfas: <b>${n.phase}</b>${Object.keys(st).length?` · ${on} av 5 obalansflaggor tända (≥ 3 plus en kreditspricka ger fasen Spricka)`:''}</p>
+    <ul class="flags">${Object.values(st).map(p=>`<li class="${p.on?'on':'off'}">${p.on?'●':'○'} ${p.txt}</li>`).join('')}</ul>
+    ${(d.notes||[]).map(x=>`<p class="small">${x}</p>`).join('')}`;
+  $('hist').innerHTML = (d.history||[]).slice().reverse().map(h => `<div><span class="m">${h.month}</span><span>${Object.entries(h.w).map(([a,w])=>`${SHORT[a]} ${Math.round(w*h.lev*100)}%`).join(' · ')}${h.lev>1?' (1,5×)':''}</span></div>`).join('') || '<span class="small">Visas när live-data finns.</span>';
+}
+
+async function renderEq(d) {
+  const { s: spx, live } = await spxP;
+  let bt = null; try { bt = await btP; } catch {}
+  const n = d.now, nc = d.nowcast, A = spx.ath, L = spx.last;
+  const isIn = !(n.flag?.EQ) && ('EQ' in (n.w||{}));
+  const barW = (v) => Math.max(0, Math.min(100, v / A.level * 100)).toFixed(2);
+  const vsAth = (v) => `<b class="neg">${pct(v / A.level - 1, 2)}</b> mot ATH`;
+  const ev = (spx.events||[]).slice().reverse();
+  const last = ev[0];
+
+  let html = `<div class="eqhead"><span class="t">S&amp;P 500</span><span class="small">Modell D handlar bara S&amp;P 500</span></div>
+    <div class="eqstate ${isIn?'in':'out'}">${isIn ? 'INNE – aktier ingår i allokeringen' : 'EXIT – utanför aktier'}${!isIn && last?.type==='exit' ? ` sedan ${mname(last.month)}` : ''}</div>`;
+  if (nc && !nc.error && nc.signal) {
+    const nextIn = !nc.signal.flag?.EQ && ('EQ' in (nc.signal.w||{}));
+    html += `<div class="small">Prognos för ${mname(nc.decisionFor)}: ${nextIn===isIn ? (isIn?'fortsatt inne':'fortsatt ute') : (nextIn?'<b>återinträde väntas</b>':'<b>exit väntas</b>')}.</div>`;
+  }
+  html += `<div class="eqbox"><div class="eqt" style="font-weight:700;font-size:1.05rem">Indexnivå mot ATH</div>
+    <div class="small">ATH vid stängning: ${num(A.level,2)} (${fd(A.date)}). Full stapel = 100 % av ATH${ev.some(e=>e.athThen)?'; gult streck = ATH när beslutet togs':''}. I beslutsstaplarna visar fältet mellan beslutsnivån och senaste stängningen (${fd(L.date)}) utfallet: <b class="lossv">rött</b> om beslutet har inneburit förlust, <b class="posv">grönt</b> annars.</div>`;
+
+  for (const e of ev) {
+    const lab = e.type === 'exit' ? 'Exitbeslut' : 'Återinträde';
+    const thenTxt = e.athThen && e.athThen.date !== A.date
+      ? `<div class="small">${pct(e.level / e.athThen.level - 1, 2)} mot dåvarande ATH ${num(e.athThen.level,2)} (${fd(e.athThen.date)})</div>` : '';
+    const mark = e.athThen && e.athThen.date !== A.date ? `<i style="left:calc(${barW(e.athThen.level)}% - 1px)"></i>` : '';
+    // Utfall mot senaste stängning: exit förlorar om index har stigit, återinträde förlorar om index har fallit
+    const up = L.level >= e.level, loss = e.type === 'exit' ? up : !up;
+    const sLo = +barW(Math.min(e.level, L.level)), sHi = +barW(Math.max(e.level, L.level));
+    const seg = sHi > sLo ? `<span class="seg ${loss?'loss':'gain'}" style="left:${sLo}%;width:${(sHi-sLo).toFixed(2)}%"></span>` : '';
+    const what = e.type === 'exit' ? (up ? 'uppgång som missats' : 'nedgång som undvikits') : (up ? 'uppgång som fångats' : 'nedgång sedan inträdet');
+    const outcome = `<div class="small">Mot stängningen ${fd(L.date)} (${num(L.level,2)}): <b class="${loss?'lossv':'posv'}">${spct(L.level / e.level - 1)}</b>, ${what} – ${loss?'förlust':'vinst'} för beslutet</div>`;
+    html += `<div class="eqrow"><div class="eqt">${lab} · ${fd(e.date)}</div>
+      <div class="small">Stängning sista handelsdagen före bytet · gäller från ${mname(e.month)}</div>
+      <div class="lvl">${num(e.level,2)} · ${vsAth(e.level)}</div>${thenTxt}
+      <div class="bar"><b style="width:${barW(e.level)}%"></b>${seg}${mark}</div>${outcome}</div>`;
+  }
+  html += `<div class="eqrow"><div class="eqt">Senaste verifierade · ${fd(L.date)}</div>
+    <div class="lvl">${num(L.level,2)} · ${vsAth(L.level)}</div>
+    <div class="bar"><b style="width:${barW(L.level)}%"></b></div></div>`;
+
+  if (last) {
+    const items = [`S&amp;P 500 (pris): <b class="${L.level>=last.level?'posv':'neg'}">${spct(L.level / last.level - 1)}</b> från ${num(last.level,2)} till ${num(L.level,2)}.`];
+    if (bt) {
+      const i0 = bt.months.indexOf(prevMonth(last.month)), i1 = bt.months.length - 1;
+      if (i0 >= 0 && i1 > i0) {
+        const r = (k) => bt[k][i1] / bt[k][i0] - 1;
+        items.push(`Modell D <b class="${r('D')>=0?'posv':'neg'}">${spct(r('D'))}</b> mot S&amp;P 500 med utdelningar ${spct(r('SPX'))}, ${mname(last.month)}–${mname(bt.months[i1])} (månadsdata från backtesten).`);
+      }
+    }
+    if (!isIn && n.healAt != null) items.push(`Återinträde: aktiespärren släpps när Baa−10y (månadssnitt) faller till ${num(n.healAt,2)} eller lägre${nc?.today?.spread!=null?`; i dag ${num(nc.today.spread,2)}`:''}.`);
+    html += `<div class="since"><b>Sedan ${last.type==='exit'?'exitbeslutet':'återinträdet'}</b><ul>${items.map(x=>`<li>${x}</li>`).join('')}</ul></div>`;
+    if (last.note) html += `<p class="small">${last.note}</p>`;
+  }
+  html += `<p class="small">${live ? `Källa: ${spx.source||'FRED SP500'}. Uppdaterad ${fd(spx.updated||L.date)}.` : '<span class="err">Indexfilen kunde inte läsas, visar senast kända nivåer.</span>'}</p></div>`;
+  $('eq').innerHTML = html;
+}
+
+async function chart() {
+  const bt = await btP;
+  const W=700,H=300,L=44,R=10,T=10,B=26, series=[['D','var(--acc)'],['SPX','#c0712b'],['6040','var(--mut)']];
+  const all = series.flatMap(([k])=>bt[k]); const lo=Math.log(Math.min(...all,1)), hi=Math.log(Math.max(...all));
+  const x=(i)=>L+(W-L-R)*i/(bt.months.length-1), y=(v)=>T+(H-T-B)*(1-(Math.log(v)-lo)/(hi-lo));
+  let s='';
+  for (let v=1; v<=Math.exp(hi); v*=10) s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--mut)">${v}×</text>`;
+  bt.months.forEach((m,i)=>{ if(m.endsWith('-01') && +m.slice(0,4)%10===0) s+=`<text x="${x(i)}" y="${H-6}" text-anchor="middle" font-size="11" fill="var(--mut)">${m.slice(0,4)}</text>`; });
+  for (const [k,c] of series) s+=`<polyline fill="none" stroke="${c}" stroke-width="${k==='D'?2.2:1.5}" points="${bt[k].map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')}"/>`;
+  $('chart').innerHTML = s;
+  const S = bt.stats, cols=[['cagr','Avkastning per år',v=>pct(v,1)],['p36','Andel 3-årsperioder med förlust',v=>pct(v)],['preal36','Andel 3-årsperioder med real förlust',v=>pct(v)],['es12','Snitt av sämsta 5 % av 12-mån',v=>pct(v,1)],['worst36','Sämsta 3 år',v=>pct(v,1)]];
+  let t='';
+  for (const per of Object.keys(S)) {
+    t+=`<tr><th colspan="5">${per}</th></tr><tr><th></th>${['S&P 500','60/40','B','D'].map(v=>`<th class="n">${v}</th>`).join('')}</tr>`;
+    for (const [k,lab,f] of cols) t+=`<tr><td>${lab}</td>${['S&P 500','60/40','B','D'].map(v=>`<td class="n">${f(S[per][v][k])}</td>`).join('')}</tr>`;
+  }
+  $('stats').innerHTML = t;
+}
+
+chart().catch(()=>{});
+let D;
+try {
+  const r = await fetch('signal.json', {cache:'no-store'}); const d = await r.json();
+  if (!r.ok || d.error) throw new Error(d.error || r.status);
+  render(d, true); D = d;
+} catch (e) { D = { ...FALLBACK, error: e.message }; render(D, false); }
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+renderEq(D).catch(e => { $('eq').innerHTML = `<span class="err">Exitkortet kunde inte visas (${e.message}).</span>`; });
+</script>
+</body>
+</html>
