@@ -12,7 +12,7 @@ Dynamisk allokering mellan aktier, statsobligationer, kredit, guld och kassa. De
 - Om multpl inte går att läsa används den senast sparade CAPE-serien i `data/cape.json`.
 
 ## Engångsinställning
-Gå till Settings → Pages → Build and deployment → Source och välj **GitHub Actions**.
+Sidan publiceras på grenen `gh-pages`. Om den inte syns efter första körningen: Settings → Pages → Source: **Deploy from a branch**, välj `gh-pages` och `/ (root)`.
 
 Valfritt: lägg en gratis FRED-nyckel som en secret med namnet `FRED_API_KEY` (Settings → Secrets → Actions). Det gör hämtningen stabilare.
 
