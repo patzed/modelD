@@ -169,7 +169,7 @@ function render(d, live) {
 
 function renderResults(d) {
   const R = (d.results || []), done = R.filter(x => !x.pending), pend = R.find(x => x.pending);
-  const start = d.resultsStart || '2026-11';
+  const start = d.resultsStart || '2026-12';
   const cls = (v) => v >= 0 ? 'posv' : 'neg';
   if (!done.length) {
     $('results').innerHTML = `<p>Uppföljningen startar med beslutet för ${mname(start)}. Första månadens resultat räknas fram när månaden är slut och FRED har publicerat månadsdata, normalt första vardagarna i nästa månad.</p>
@@ -183,7 +183,7 @@ function renderResults(d) {
   $('results').innerHTML = `<p>Ackumulerat ${mname(done[0].month)}–${mname(last.month)}: <b>Modell D <span class="${cls(last.cum_D)}">${spct(last.cum_D)}</span></b> · S&amp;P 500 ${spct(last.cum_SPX)} · 60/40 ${spct(last['cum_60/40'])}</p>
     <table><thead><tr><th>Månad</th><th class="n">D</th><th class="n">S&amp;P 500</th><th class="n">60/40</th></tr></thead><tbody>${rows}</tbody></table>
     ${pend ? `<p class="small">${mname(pend.month)} väntar på data: ${pend.pending.map(a=>SHORT[a]).join(', ')}.</p>` : ''}
-    <p class="small">Verkliga utfall med låsta beslut, efter 0,1 % kostnad per byte och lånekostnad vid hävstång. Stat och kredit räknas från FRED:s räntor (som i backtesten), guld från Världsbankens månadsmedel, S&amp;P 500 med utdelningar (totalavkastningsindex); saknas det används pris + 0,1 % per månad, markerat med *, och månaden räknas om automatiskt när de verkliga utdelningarna finns. Novembers beslut togs den 24 november men räknas för hela månaden.</p>`;
+    <p class="small">Verkliga utfall med låsta beslut, efter 0,1 % kostnad per byte och lånekostnad vid hävstång. Stat och kredit räknas från FRED:s räntor (som i backtesten), guld från Världsbankens månadsmedel, S&amp;P 500 med utdelningar (totalavkastningsindex); saknas det används pris + 0,1 % per månad, markerat med *, och månaden räknas om automatiskt när de verkliga utdelningarna finns.</p>`;
 }
 
 async function renderEq(d) {
