@@ -153,7 +153,8 @@ fs.writeFileSync(path.join(ROOT, 'data', 'results.csv'), 'månad,innehav,hävst�
 
 const trInfo = trDays.length ? `S&P 500 totalavkastning (Yahoo ^SP500TR): senast ${trDays[trDays.length - 1]}.` : 'S&P 500 totalavkastning kunde inte hämtas; pris + 0,1 %/mån används.';
 const goldInfo = Object.keys(GOLD).length ? `Guld (Världsbanken): ${Object.keys(GOLD).length} månader, senast ${Object.keys(GOLD).sort().pop()}.` : 'Guld: prisserien kunde inte hämtas.';
-const signal = { trInfo, goldInfo, results, resultsStart: START, generated: new Date().toISOString(), decisionFor: now.month, dataMonth: k, names: NAMES, assets: ASSETS, now, history, nowcast,
+const latestData = { spread: Object.keys(BAA10Y).sort().pop(), rates: Object.keys(DGS10).sort().pop(), spx: Object.keys(SPX).sort().pop() };
+const signal = { latestData, trInfo, goldInfo, results, resultsStart: START, generated: new Date().toISOString(), decisionFor: now.month, dataMonth: k, names: NAMES, assets: ASSETS, now, history, nowcast,
   notes: ['Beslutet gäller hela nästa månad. Byt innehav första handelsdagen.', 'Hävstång 1,5× innebär lån till ungefär kortränta + 1 procentenhet.',
     `Dagsdata från FRED (BAA10Y, DGS10, DTB3); ${nowcast?.tradingDays ?? 0} handelsdagar i månaden hittills. CAPE: ${capeSource}${capeNote}.`,
     cpiLatest < k ? `KPI för ${k} är inte publicerad än; ${cpiLatest} används.` : 'KPI är uppdaterad.'] };

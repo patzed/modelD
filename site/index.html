@@ -37,6 +37,7 @@
   .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:.85rem; color:var(--mut); margin-top:6px; }
   .legend i { display:inline-block; width:14px; height:3px; vertical-align:middle; margin-right:5px; border-radius:2px; }
   .err { color:var(--no); }
+  .upd { display:inline-block; margin:4px 0 6px; padding:3px 10px; border-radius:99px; font-weight:700; color:var(--ok); background:color-mix(in srgb,var(--ok) 14%,transparent); }
   details summary { cursor:pointer; font-weight:600; }
   .small { font-size:.85rem; color:var(--mut); }
   /* Aktieexit mot ATH */
@@ -136,7 +137,9 @@ const spxP = fetch('spx.json',{cache:'no-store'}).then(r=>{ if(!r.ok) throw new 
 function render(d, live) {
   const n = d.now;
   $('status').innerHTML = live
-    ? `Beslut för <b>${mname(d.decisionFor)}</b>, baserat på data till och med ${mname(d.dataMonth)}. Uppdaterad ${new Date(d.generated).toLocaleString('sv-SE',{dateStyle:'short',timeStyle:'short'})}.`
+    ? `<div class="upd">✓ Uppdaterad ${new Date(d.generated).toLocaleString('sv-SE',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+       <div>Senaste marknadsdata: <b>${d.latestData ? fd([d.latestData.spread, d.latestData.spx].sort()[1]) : '–'}</b> (FRED) · Nästa uppdatering: i natt efter 23.30</div>
+       <div>Beslut för <b>${mname(d.decisionFor)}</b>, baserat på månadsdata till och med ${mname(d.dataMonth)}.</div>`
     : `<span class="err">Data kunde inte läsas (${d.error||'okänt fel'}). Visar senast kända signal för ${mname(d.decisionFor)}.</span>`;
   $('alloc').innerHTML = Object.entries(n.w).map(([a,w]) => `<div class="pos"><div class="pct">${pct(w*n.lev)}</div><div class="nm">${NAMES[a]}</div></div>`).join('');
   $('levbox').innerHTML = n.lev > 1
