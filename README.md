@@ -9,7 +9,7 @@ Dynamisk allokering mellan aktier, statsobligationer, kredit, guld och kassa. De
   - CAPE från multpl.com
 - Den räknar fram månadens beslut, prognosen för nästa månad och exitkortet, och publicerar sidan.
 - Varje dags beslut och prognos sparas i `data/log.csv`.
-- **Uppföljning från november 2026:** varje månads beslut låses i `data/decisions.json` när det fattas och ändras aldrig i efterhand. När månaden är slut räknas det verkliga utfallet mot S&P 500 (totalavkastning med utdelningar från ^SP500TR; reserv pris + 0,1 %/mån, räknas om automatiskt) och 60/40 och sparas i `data/results.csv`. Det visas också på sidan.
+- **Uppföljning från 1 december 2026:** avkastningen räknas från och med december 2026 (novembers beslut finns kvar i `data/decisions.json` men räknas inte). Varje månads beslut låses i `data/decisions.json` när det fattas och ändras aldrig i efterhand. När månaden är slut räknas det verkliga utfallet mot S&P 500 (totalavkastning med utdelningar från ^SP500TR; reserv pris + 0,1 %/mån, räknas om automatiskt) och 60/40 och sparas i `data/results.csv`. Det visas också på sidan.
 - Om multpl inte går att läsa används den senast sparade CAPE-serien i `data/cape.json`.
 
 ## Engångsinställning

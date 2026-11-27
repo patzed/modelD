@@ -109,8 +109,8 @@ if (sp != null && lr != null && tb != null) {
     today: { spread: BAA10Y[lastDay], GS10: DGS10[inC(DGS10).pop()], CAPE: CAPE[c] }, monthAvg: { spread: sp, GS10: lr, TB3: tb }, signal: pre,
     changes: JSON.stringify(Object.entries(pre.w).sort()) !== JSON.stringify(Object.entries(now.w).sort()) || pre.lev !== now.lev };
 }
-// --- Uppföljning: låsta beslut och verkliga månadsresultat från start (nov 2026) ---
-const START = '2026-11';
+// --- Uppföljning: låsta beslut och verkliga månadsresultat från start (dec 2026) ---
+const START = '2026-12';
 const decF = path.join(ROOT, 'data', 'decisions.json');
 let decisions = {}; try { decisions = JSON.parse(fs.readFileSync(decF)); } catch {}
 if (now.month >= START && !decisions[now.month]) decisions[now.month] = { w: now.w, lev: now.lev, phase: now.phase, decidedOn: new Date().toISOString().slice(0, 10), dataMonth: k };
@@ -136,7 +136,7 @@ const assetRet = (a, m) => { const p = add(m, -1);
     if (e0 && e1) { eqMethod[m] = 'pris+0,1%'; return e1 / e0 - 1 + DIV_M; }
     return null; } };
 const results = []; let prevW = {}; const cum = { D: 1, SPX: 1, '60/40': 1 };
-for (const m of Object.keys(decisions).sort()) {
+for (const m of Object.keys(decisions).filter((m) => m >= START).sort()) {
   const d = decisions[m]; if (`${add(m, 1)}-01` > todayStr) break; // månaden är inte slut
   const need = [...new Set([...Object.keys(d.w), 'EQ', 'BOND', 'CASH'])], r = {};
   for (const a of need) r[a] = assetRet(a, m);
