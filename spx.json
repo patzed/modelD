@@ -1,0 +1,25 @@
+{
+  "source": "FRED SP500 (officiella dagliga stängningar)",
+  "updated": "2026-11-28",
+  "ath": {
+    "date": "2026-10-06",
+    "level": 7818.93
+  },
+  "last": {
+    "date": "2026-11-25",
+    "level": 7182.78
+  },
+  "events": [
+    {
+      "type": "exit",
+      "month": "2025-05",
+      "date": "2025-04-30",
+      "level": 5569.06,
+      "athThen": {
+        "date": "2025-02-19",
+        "level": 6144.15
+      },
+      "note": "Beräknat i efterhand: Modell D byggdes 24 nov. 2026, så inga faktiska affärer ligger bakom."
+    }
+  ]
+}
